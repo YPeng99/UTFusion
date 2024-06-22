@@ -8,7 +8,7 @@ from models.MetaFormer import Former
 from utils import get_parameter_number
 
 
-class SwitchFusion(nn.Module):
+class P2Fusion(nn.Module):
     """
     introduction
     """
@@ -46,11 +46,10 @@ class SwitchFusion(nn.Module):
         patch = patch[:,None,None,None,:].expand(outs.shape[0], 1, outs.shape[2], outs.shape[3], outs.shape[4])
         outs = torch.cat([outs, patch], dim=1)
 
-        # mask = torch.zeros(outs.shape[1], outs.shape[1])
-        # mask[:-1, -1] = 1
-        # mask = mask.bool().to(outs.device)
-        # outs = self.in_proj(outs)
-        mask = None
+        mask = torch.zeros(outs.shape[1], outs.shape[1])
+        mask[:-1, -1] = 1
+        mask = mask.bool().to(outs.device)
+        outs = self.in_proj(outs)
 
         for former in self.formers:
             outs = former(outs,mask)
@@ -62,7 +61,7 @@ class SwitchFusion(nn.Module):
 
 if __name__ == '__main__':
     device = 'cpu'
-    model = SwitchFusion().to(device)
+    model = P2Fusion().to(device)
     model.eval()
     x = torch.randn(10, 1, 520, 520).to(device)
     fuse_scheme = torch.randint(0, 2, (10,)).to(device)

@@ -75,25 +75,12 @@ class SwinGLU(nn.Module):
         return x
 
 
-class FFN(nn.Module):
-    def __init__(self, dim, hidden_dim, dropout=0.1, bias=False):
-        super().__init__()
-        self.mlp_1 = PreNorm(dim, SwinGLU(dim, hidden_dim, dropout, bias))
-        self.mlp_2 = PreNorm(dim, SwinGLU(dim, hidden_dim, dropout, bias))
-
-    def forward(self, x,fuse_scheme=None):
-        x_1 = self.mlp_1(x[:, :-1, ...])
-        x_2 = self.mlp_2(x[:, -1, ...].unsqueeze(1),fuse_scheme)
-        x = torch.cat([x_1, x_2], dim=1)
-        return x
-
 
 class Former(nn.Module):
     def __init__(self, dim, n_head, hidden_dim, dropout=0.1, drop_path=0., bias=False):
         super().__init__()
         self.token_mixer = PreNorm(dim, PatchAttention(dim, n_head, dropout, bias))
         self.ffn = PreNorm(dim, SwinGLU(dim, hidden_dim, dropout, bias))
-        # self.ffn = FFN(dim, hidden_dim)
         self.drop_path = DropPath(drop_path)
 
     def forward(self, x,fuse_scheme=None, mask=None):
