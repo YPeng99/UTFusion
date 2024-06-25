@@ -1,13 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import math
-from torchvision.models.vgg import vgg16
-import numpy as np
-import torchvision.transforms.functional as TF
-from kornia.losses import ssim_loss
-from PIL import Image
-from torchvision.transforms import transforms
+
 
 
 class Sobelxy(nn.Module):
@@ -45,23 +39,7 @@ class L_Grad(nn.Module):
         return Loss_gradient
 
 
-class L_SSIM(nn.Module):
-    def __init__(self):
-        super(L_SSIM, self).__init__()
-        self.sobelconv = Sobelxy()
 
-    def forward(self, image_A, image_B, image_fused):
-        gradient_A = self.sobelconv(image_A)
-        gradient_B = self.sobelconv(image_B)
-        weight_A = torch.mean(gradient_A, dim=[1, 2, 3]) / (
-                torch.mean(gradient_A, dim=[1, 2, 3]) + torch.mean(gradient_B, dim=[1, 2, 3]))
-        weight_B = torch.mean(gradient_B, dim=[1, 2, 3]) / (
-                torch.mean(gradient_A, dim=[1, 2, 3]) + torch.mean(gradient_B, dim=[1, 2, 3]))
-        ssim_loss_A = ssim_loss(image_A, image_fused, 11, reduction='none')
-        ssim_loss_A = torch.mean(ssim_loss_A, dim=[1, 2, 3]) * weight_A
-        ssim_loss_B = ssim_loss(image_B, image_fused, 11, reduction='none')
-        ssim_loss_B = torch.mean(ssim_loss_B, dim=[1, 2, 3]) * weight_B
-        return ssim_loss_A + ssim_loss_B
 
 
 class fusion_loss_mff(nn.Module):
@@ -71,7 +49,6 @@ class fusion_loss_mff(nn.Module):
         super().__init__()
         self.L_Grad = L_Grad()
         self.L_Inten = nn.L1Loss(reduction='none')
-        self.L_SSIM = L_SSIM()
 
     def forward(self, image_A, image_B, image_fused, fuse_scheme):
         weight = torch.ones_like(fuse_scheme).float()
@@ -84,14 +61,12 @@ class fusion_loss_mff(nn.Module):
                                                                   dim=0), dim=0))
         loss_l1 = torch.mean(loss_l1, dim=[1, 2, 3]) * weight
         loss_gradient = self.L_Grad(image_A, image_B, image_fused) * weight
-        loss_SSIM = self.L_SSIM(image_A, image_B, image_fused) * weight
 
         loss_l1 = torch.mean(loss_l1)
         loss_gradient = torch.mean(loss_gradient)
-        loss_SSIM = torch.mean(loss_SSIM)
 
-        fusion_loss = 1 * loss_l1 + 2 * loss_gradient + 0 * loss_SSIM
-        return fusion_loss, loss_l1, loss_gradient, loss_SSIM
+        fusion_loss = 1 * loss_l1 + 2 * loss_gradient
+        return fusion_loss, loss_l1, loss_gradient
 
 
 if __name__ == '__main__':

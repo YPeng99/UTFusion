@@ -83,7 +83,7 @@ class Former(nn.Module):
         self.ffn = PreNorm(dim, SwinGLU(dim, hidden_dim, dropout, bias))
         self.drop_path = DropPath(drop_path)
 
-    def forward(self, x,fuse_scheme=None, mask=None):
+    def forward(self, x, mask=None):
         x = x + self.drop_path(self.token_mixer(x, mask))
         x = x + self.drop_path(self.ffn(x))
         return x
@@ -93,10 +93,7 @@ if __name__ == '__main__':
     x = torch.randn(8, 3, 3, 224, 224).cuda()
     x = torch.pixel_unshuffle(x, 8).permute(0, 1, 3, 4, 2)
     print(x.shape)
-    # x = x.permute(0,1,3,4,2)
     model = Former(192, 12, 256).cuda()
     model.eval()
     x = model(x)
     print(x.shape)
-    # model = Encoder(192,256)
-    # print(model)

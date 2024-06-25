@@ -60,15 +60,6 @@ def get_parameter_number(model):
     # return {'Total': total_num, 'Trainable': trainable_num}
 
 
-def dice_loss(predicted, target, smooth=1e-6):
-    intersection = (predicted * target).sum()
-    union = predicted.sum() + target.sum()
-
-    dice_coefficient = (2.0 * intersection + smooth) / (union + smooth)
-
-    loss = 1.0 - dice_coefficient
-    return loss
-
 def rgb2ycbcr(img):
     R = img[:, 0, :, :]
     G = img[:, 1, :, :]
@@ -88,10 +79,11 @@ def ycbcr2rgb(Y, Cb, Cr):
 
 def fuse_cb_cr(Cb1, Cr1, Cb2, Cr2, tao=128, eps=1e-12):
     Cb = (Cb1 * torch.abs(Cb1 - tao) + Cb2 * torch.abs(Cb2 - tao)) / (torch.abs(Cb1 - tao) + torch.abs(Cb2 - tao) + eps)
-    Cr = (Cr1 * torch.abs(Cr1 - tao) + Cr2 * torch.abs(Cr2 - tao)) / (torch.abs(Cr1 - tao) + torch.abs(Cb2 - tao) + eps)
+    Cr = (Cr1 * torch.abs(Cr1 - tao) + Cr2 * torch.abs(Cr2 - tao)) / (torch.abs(Cr1 - tao) + torch.abs(Cr2 - tao) + eps)
     return Cb, Cr
 
-def fuse_seq_cb_cr(Cb,Cr,tao=0.5, eps=1e-12):
+
+def fuse_seq_cb_cr(Cb,Cr,tao=128, eps=1e-12):
     Cb_n = 0.0
     Cb_d = 0.0
     Cr_n = 0.0
@@ -103,4 +95,5 @@ def fuse_seq_cb_cr(Cb,Cr,tao=0.5, eps=1e-12):
         Cb_d += torch.abs(b-tao)
         Cr_d += torch.abs(r-tao)
 
-    return Cb_n/(Cb_d+eps), Cr_n/(Cr_d+eps)
+    return Cb_n/(Cb_d), Cr_n/(Cr_d+eps)
+

@@ -49,8 +49,8 @@ class P2Fusion(nn.Module):
         mask = torch.zeros(outs.shape[1], outs.shape[1])
         mask[:-1, -1] = 1
         mask = mask.bool().to(outs.device)
-        outs = self.in_proj(outs)
 
+        outs = self.in_proj(outs)
         for former in self.formers:
             outs = former(outs,mask)
         out = outs[:,-1,...]
@@ -60,16 +60,14 @@ class P2Fusion(nn.Module):
 
 
 if __name__ == '__main__':
-    device = 'cpu'
+    device = 'cuda'
     model = P2Fusion().to(device)
     model.eval()
     x = torch.randn(10, 1, 520, 520).to(device)
     fuse_scheme = torch.randint(0, 2, (10,)).to(device)
     with torch.inference_mode():
         start = time.time()
-        for _ in range(100):
-            out = model([x, x],fuse_scheme)
-            print(out.device)
-            get_parameter_number(model)
+        out = model([x, x],fuse_scheme)
+        get_parameter_number(model)
     end = time.time()
     print((end - start) / 1000)
