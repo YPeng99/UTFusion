@@ -18,13 +18,13 @@ class PreNorm(nn.Module):
 
 
 class PatchAttention(nn.Module):
-    def __init__(self, dim=192, n_head=12, dropout=0., bias=True):
+    def __init__(self, dim=192, n_heads=12, dropout=0., bias=True):
         super().__init__()
-        assert dim % n_head == 0, f"dim {dim} must be divisible by n_head {n_head}"
+        assert dim % n_heads == 0, f"dim {dim} must be divisible by n_heads {n_heads}"
 
         self.dim = dim
-        self.n_head = n_head
-        self.head_size = self.dim // self.n_head
+        self.n_heads = n_heads
+        self.head_size = self.dim // self.n_heads
         self.scale = self.head_size ** -0.5
         self.proj_qkv = nn.Sequential(
             nn.Linear(dim, dim * 3, bias=bias),
@@ -39,9 +39,9 @@ class PatchAttention(nn.Module):
         B, N, H, W, C = x.shape
         q, k, v = self.proj_qkv(x).chunk(3, -1)
 
-        q = q.view(B, N, H, W, self.n_head, self.head_size).permute(0, 2, 3, 4, 1, 5)
-        k = k.view(B, N, H, W, self.n_head, self.head_size).permute(0, 2, 3, 4, 5, 1)
-        v = v.view(B, N, H, W, self.n_head, self.head_size).permute(0, 2, 3, 4, 1, 5)
+        q = q.view(B, N, H, W, self.n_heads, self.head_size).permute(0, 2, 3, 4, 1, 5)
+        k = k.view(B, N, H, W, self.n_heads, self.head_size).permute(0, 2, 3, 4, 5, 1)
+        v = v.view(B, N, H, W, self.n_heads, self.head_size).permute(0, 2, 3, 4, 1, 5)
 
         dots = torch.matmul(q, k) * self.scale
 
@@ -77,9 +77,9 @@ class SwinGLU(nn.Module):
 
 
 class Former(nn.Module):
-    def __init__(self, dim, n_head, hidden_dim, dropout=0.1, drop_path=0., bias=False):
+    def __init__(self, dim, n_heads, hidden_dim, dropout=0.1, drop_path=0., bias=False):
         super().__init__()
-        self.token_mixer = PreNorm(dim, PatchAttention(dim, n_head, dropout, bias))
+        self.token_mixer = PreNorm(dim, PatchAttention(dim, n_heads, dropout, bias))
         self.ffn = PreNorm(dim, SwinGLU(dim, hidden_dim, dropout, bias))
         self.drop_path = DropPath(drop_path)
 
@@ -90,10 +90,10 @@ class Former(nn.Module):
 
 
 if __name__ == '__main__':
-    x = torch.randn(8, 3, 3, 224, 224).cuda()
+    x = torch.randn(8, 3, 3, 224, 224)
     x = torch.pixel_unshuffle(x, 8).permute(0, 1, 3, 4, 2)
     print(x.shape)
-    model = Former(192, 12, 256).cuda()
+    model = Former(192, 12, 256)
     model.eval()
     x = model(x)
     print(x.shape)

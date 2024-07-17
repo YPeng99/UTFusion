@@ -4,7 +4,7 @@ import torch
 from torch.utils.data import DataLoader
 
 from data_loader import InferenceDataset
-from models.P2Fusion import P2Fusion
+from models.UTFusion import UTFusion
 from utils import  denormalizer,rgb2ycbcr,ycbcr2rgb,fuse_seq_cb_cr,fuse_cb_cr
 from torchvision import transforms
 
@@ -15,11 +15,11 @@ from torchvision import transforms
 if __name__ == '__main__':
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     save_path = './results'
-    model_name = 'P2Fusion'
+    model_name = 'UTFusion'
     # Multi-exposure settings 1 Other settings 0
     fuse_scheme = torch.tensor([1]).to(device)
-    model = P2Fusion()
-    model.load_state_dict(torch.load("logs/P2Fusion.ckpt")['state_dict'])
+    model = UTFusion()
+    model.load_state_dict(torch.load("logs/UTFusion.ckpt")['state_dict'])
     model.to(device)
     model.eval()
 

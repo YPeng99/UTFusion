@@ -8,7 +8,7 @@ from models.MetaFormer import Former
 from utils import get_parameter_number
 
 
-class P2Fusion(nn.Module):
+class UTFusion(nn.Module):
     """
     introduction
     """
@@ -61,7 +61,7 @@ class P2Fusion(nn.Module):
 
 if __name__ == '__main__':
     device = 'cuda'
-    model = P2Fusion().to(device)
+    model = UTFusion().to(device)
     model.eval()
     x = torch.randn(10, 1, 520, 520).to(device)
     fuse_scheme = torch.randint(0, 2, (10,)).to(device)
