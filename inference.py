@@ -19,7 +19,7 @@ if __name__ == '__main__':
     # Multi-exposure settings 1 Other settings 0
     fuse_scheme = torch.tensor([1]).to(device)
     model = UTFusion()
-    model.load_state_dict(torch.load("logs/UTFusion.ckpt")['state_dict'])
+    model.load_state_dict(torch.load("logs/UTFusion.ckpt",map_location=device)['state_dict'])
     model.to(device)
     model.eval()
 
