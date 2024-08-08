@@ -1,8 +1,11 @@
 import argparse
 import logging
+import os
+import random
 import time
 from datetime import timedelta
 
+import numpy as np
 import torch
 from torchvision import transforms
 
@@ -20,7 +23,7 @@ def parse_args():
     parser.add_argument('--log_dir', type=str, default='./logs', help='log path')
     parser.add_argument('--train_data_dir', type=str, default='/home/data/SwitchFusion/train', help='data path')
     parser.add_argument('--test_data_dir', type=str, default='/home/data/SwitchFusion/test', help='data path')
-    parser.add_argument('--tf_logs_dir', type=str, default='/home/mac-of-ypeng/tf-logs/SwitchFusion', help='tf_logs path')
+    parser.add_argument('--tf_logs_dir', type=str, default='/home/mac-of-ypeng/tf-logs/UTFusion', help='tf_logs path')
 
     return parser.parse_args()
 
@@ -58,6 +61,16 @@ def get_parameter_number(model):
     trainable_num = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f'Total : {total_num / 10 ** 6}M, Trainable : {trainable_num / 10 ** 6}M')
     # return {'Total': total_num, 'Trainable': trainable_num}
+
+def seed_everything(seed):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.benchmark = False
+    torch.backends.cudnn.deterministic = True
+    os.environ['PYTHONHASHSEED'] = str(seed)
 
 
 def rgb2ycbcr(img):

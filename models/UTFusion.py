@@ -49,6 +49,7 @@ class UTFusion(nn.Module):
         mask = torch.zeros(outs.shape[1], outs.shape[1])
         mask[:-1, -1] = 1
         mask = mask.bool().to(outs.device)
+        # mask = None
 
         outs = self.in_proj(outs)
         for former in self.formers:

@@ -53,4 +53,3 @@ if __name__ == '__main__':
             fused.save(os.path.join(save_path,img_name[0]))
             print(os.path.join(save_path,img_name[0]))
 
-

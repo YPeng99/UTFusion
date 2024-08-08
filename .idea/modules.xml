@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/P2Fusion.iml" filepath="$PROJECT_DIR$/.idea/P2Fusion.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/UTFusion.iml" filepath="$PROJECT_DIR$/.idea/UTFusion.iml" />
     </modules>
   </component>
 </project>
