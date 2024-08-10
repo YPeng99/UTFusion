@@ -59,17 +59,17 @@ def train(args, model, train_dataloader, logger, checkpoint):
         int_loss_epoch = torch.tensor(0.0)
         gradient_loss_epoch = torch.tensor(0.0)
 
-        logger.info(f'Epoch {epoch + 1} [{epoch + 1}/{args.epoch}]')
+        # logger.info(f'Epoch {epoch + 1} [{epoch + 1}/{args.epoch}]')
         lr = optimizer.state_dict()['param_groups'][0]['lr']
-        logger.info(f'Learning rate: {lr:>5.8f}')
+        logger.info(f'[{epoch + 1}/{args.epoch}]: Learning rate: {lr:>5.8f}')
         bar = tqdm(enumerate(train_dataloader), total=len(train_dataloader), smoothing=0.9, ncols=120)
         bar.set_description(f'[{epoch + 1}/{args.epoch}]')
         bar.set_postfix({'loss': f'{loss.item():>5.4f}', })
 
         for i, (S1, S2, fuse_scheme) in bar:
-            S1 = S1.to(args.device)
-            S2 = S2.to(args.device)
-            fuse_scheme = fuse_scheme.to(args.device)
+            S1 = S1.to(args.device,non_blocking=True)
+            S2 = S2.to(args.device,non_blocking=True)
+            fuse_scheme = fuse_scheme.to(args.device,non_blocking=True)
 
             fused = model((S1, S2), fuse_scheme)
 
@@ -107,10 +107,10 @@ def train(args, model, train_dataloader, logger, checkpoint):
             }
             torch.save(state, args.log_dir + f'/{args.model}.ckpt')
 
-        logger.info(f'loss: {total_loss_epoch:>5.4f} {improve}')
-        logger.info(f'best_loss: {best_loss:>5.4f}')
-        logger.info(f'\tint_loss: {int_loss_epoch:>5.4f}')
-        logger.info(f'\tgradient_loss: {gradient_loss_epoch:>5.4f}')
+        logger.info(f'[{epoch + 1}/{args.epoch}]: loss: {total_loss_epoch:>5.4f} {improve}')
+        logger.info(f'[{epoch + 1}/{args.epoch}]: best_loss: {best_loss:>5.4f}')
+        logger.info(f'[{epoch + 1}/{args.epoch}]: int_loss: {int_loss_epoch:>5.4f}')
+        logger.info(f'[{epoch + 1}/{args.epoch}]: gradient_loss: {gradient_loss_epoch:>5.4f}')
 
         writer.add_scalar('loss/loss', total_loss_epoch, epoch)
         writer.add_scalar('loss/int_loss', int_loss_epoch, epoch)
@@ -140,17 +140,17 @@ if __name__ == '__main__':
     logger.info(args)
 
     train_dataset = TrainDataset(args.train_data_dir)
-    train_dataloader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=8,
+    train_dataloader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=8,pin_memory=True,
                                   prefetch_factor=8, persistent_workers=True, drop_last=False)
 
     model = UTFusion()
     model.to(args.device)
 
     checkpoint = torch.load(os.path.join(args.log_dir, args.model + '.ckpt')) if args.restart else None
-    # try:
-    train(args, model, train_dataloader, logger, checkpoint)
-    # except Exception as e:
-    #     logger.info(e)
-    # finally:
+    try:
+        train(args, model, train_dataloader, logger, checkpoint)
+    except Exception as e:
+        logger.error(e)
+    finally:
         # os.system("/usr/bin/shutdown")
-        # pass
+        pass
