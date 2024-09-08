@@ -41,7 +41,7 @@ def train(args, model, train_dataloader, logger, checkpoint):
 
     if checkpoint:
         start = checkpoint['epoch']
-        model.load_state_dict(checkpoint['state_dict'])
+        model.load_state_dict(checkpoint['state_dict'],strict=False)
         optimizer.load_state_dict(checkpoint['optimizer'])
         scheduler.load_state_dict(checkpoint['scheduler'])
         random.setstate(checkpoint['py_state'])
@@ -56,10 +56,7 @@ def train(args, model, train_dataloader, logger, checkpoint):
         model.train()
 
         total_loss_epoch = torch.tensor(0.0)
-        int_loss_epoch = torch.tensor(0.0)
-        gradient_loss_epoch = torch.tensor(0.0)
 
-        # logger.info(f'Epoch {epoch + 1} [{epoch + 1}/{args.epoch}]')
         lr = optimizer.state_dict()['param_groups'][0]['lr']
         logger.info(f'[{epoch + 1}/{args.epoch}]: Learning rate: {lr:>5.8f}')
         bar = tqdm(enumerate(train_dataloader), total=len(train_dataloader), smoothing=0.9, ncols=120)
@@ -67,13 +64,13 @@ def train(args, model, train_dataloader, logger, checkpoint):
         bar.set_postfix({'loss': f'{loss.item():>5.4f}', })
 
         for i, (S1, S2, fuse_scheme) in bar:
-            S1 = S1.to(args.device,non_blocking=True)
-            S2 = S2.to(args.device,non_blocking=True)
-            fuse_scheme = fuse_scheme.to(args.device,non_blocking=True)
+            S1 = S1.to(args.device, non_blocking=True)
+            S2 = S2.to(args.device, non_blocking=True)
+            fuse_scheme = fuse_scheme.to(args.device, non_blocking=True)
 
             fused = model((S1, S2), fuse_scheme)
 
-            loss, loss_int, loss_gradient= mff_loss(S1, S2, fused, fuse_scheme)
+            loss = mff_loss(S1, S2, fused, fuse_scheme)
 
             optimizer.zero_grad()
             loss.backward()
@@ -81,13 +78,9 @@ def train(args, model, train_dataloader, logger, checkpoint):
 
             bar.set_postfix({'loss': f'{loss.item():>5.4f}', })
             total_loss_epoch += loss.item()
-            int_loss_epoch += loss_int.item()
-            gradient_loss_epoch += loss_gradient.item()
 
         scheduler.step()
         total_loss_epoch = total_loss_epoch / len(train_dataloader)
-        int_loss_epoch = int_loss_epoch / len(train_dataloader)
-        gradient_loss_epoch = gradient_loss_epoch / len(train_dataloader)
 
         improve = ''
         if total_loss_epoch <= best_loss:
@@ -109,19 +102,13 @@ def train(args, model, train_dataloader, logger, checkpoint):
 
         logger.info(f'[{epoch + 1}/{args.epoch}]: loss: {total_loss_epoch:>5.4f} {improve}')
         logger.info(f'[{epoch + 1}/{args.epoch}]: best_loss: {best_loss:>5.4f}')
-        logger.info(f'[{epoch + 1}/{args.epoch}]: int_loss: {int_loss_epoch:>5.4f}')
-        logger.info(f'[{epoch + 1}/{args.epoch}]: gradient_loss: {gradient_loss_epoch:>5.4f}')
 
         writer.add_scalar('loss/loss', total_loss_epoch, epoch)
-        writer.add_scalar('loss/int_loss', int_loss_epoch, epoch)
-        writer.add_scalar('loss/gradient_loss', gradient_loss_epoch, epoch)
 
         time_dif = get_time_dif(start_time)
         logger.info(f'time usage: {time_dif}')
 
     writer.close()
-
-
 
 
 if __name__ == '__main__':
@@ -139,11 +126,11 @@ if __name__ == '__main__':
     logger.info('PARAMETER ...')
     logger.info(args)
 
-    train_dataset = TrainDataset(args.train_data_dir)
-    train_dataloader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=8,pin_memory=True,
-                                  prefetch_factor=8, persistent_workers=True, drop_last=False)
+    train_dataset = TrainDataset()
+    train_dataloader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=5,
+                                  prefetch_factor=5, pin_memory=True, persistent_workers=True, drop_last=False)
 
-    model = UTFusion()
+    model = UTFusion(use_checkpoint=args.use_checkpoint)
     model.to(args.device)
 
     checkpoint = torch.load(os.path.join(args.log_dir, args.model + '.ckpt')) if args.restart else None

@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
+from torch.utils.checkpoint import checkpoint
 from models.RMSNorm import RMSNorm
 from models.DropPath import DropPath
 
@@ -75,15 +75,23 @@ class SwinGLU(nn.Module):
         return x
 
 
-
 class Former(nn.Module):
-    def __init__(self, dim, n_heads, hidden_dim, dropout=0.1, drop_path=0., bias=False):
+    def __init__(self, dim, n_heads, hidden_dim, dropout=0.1, drop_path=0., bias=False,
+                 use_checkpoint=False):
         super().__init__()
         self.token_mixer = PreNorm(dim, PatchAttention(dim, n_heads, dropout, bias))
         self.ffn = PreNorm(dim, SwinGLU(dim, hidden_dim, dropout, bias))
         self.drop_path = DropPath(drop_path)
 
+        self.use_checkpoint = use_checkpoint
+
     def forward(self, x, mask=None):
+        if self.use_checkpoint and self.training:
+            return checkpoint(self._forward, x, mask)
+        else:
+            return self._forward(x, mask=mask)
+
+    def _forward(self, x, mask=None):
         x = x + self.drop_path(self.token_mixer(x, mask))
         x = x + self.drop_path(self.ffn(x))
         return x
@@ -93,7 +101,7 @@ if __name__ == '__main__':
     x = torch.randn(8, 3, 3, 224, 224)
     x = torch.pixel_unshuffle(x, 8).permute(0, 1, 3, 4, 2)
     print(x.shape)
-    model = Former(192, 12, 256)
+    model = Former(192, 12, 256, use_checkpoint=True)
     model.eval()
     x = model(x)
     print(x.shape)

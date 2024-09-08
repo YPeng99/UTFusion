@@ -16,10 +16,11 @@ if __name__ == '__main__':
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     save_path = './results'
     model_name = 'UTFusion'
+
     # Multi-exposure settings 1 Other settings 0
     fuse_scheme = torch.tensor([1]).to(device)
     model = UTFusion()
-    model.load_state_dict(torch.load("logs/UTFusion.ckpt",map_location=device)['state_dict'])
+    model.load_state_dict(torch.load("logs/UTFusion.pt",map_location=device))
     model.to(device)
     model.eval()
 

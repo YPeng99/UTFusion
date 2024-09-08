@@ -12,10 +12,10 @@ from torchvision import transforms
 
 def parse_args():
     parser = argparse.ArgumentParser('Model')
-    parser.add_argument('--model', type=str, default='UTFusion', help='model name')
+    parser.add_argument('--model', type=str, default='UTFusion_p3_nobias', help='model name')
     parser.add_argument('--use_checkpoint', type=str, default='False', choices=['True', 'False'], help='use checkpoint')
     parser.add_argument('--restart', type=str, default='False', choices=['True', 'False'], help='restart')
-    parser.add_argument('--batch_size', type=int, default=128, help='batch Size during training')
+    parser.add_argument('--batch_size', type=int, default=64, help='batch Size during training')
     parser.add_argument('--epoch', default=3000, type=int, help='epoch to run')
     parser.add_argument('--lr', default=1e-4, type=float, help='initial learning rate')
     parser.add_argument('--warmup_ratio', default=0.01, type=float, help='initial warmup ratio')
