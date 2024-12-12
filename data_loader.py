@@ -27,7 +27,7 @@ class InferenceDataset(Dataset):
         img_list = []
         for p in self.file_path:
             img_path = os.path.join(self.root,p,img_name)
-            img = Image.open(img_path)
+            img = Image.open(img_path).convert('RGB')
             img = self.to_tensor(img)
             img_list.append(img)
         return img_list,img_name
@@ -107,9 +107,9 @@ class TrainDataset(Dataset):
 
 
 if __name__ == '__main__':
-    dataset = TrainDataset()
-    data_loader = DataLoader(dataset, batch_size=1, shuffle=True)
+    dataset = InferenceDataset()
+    data_loader = DataLoader(dataset, batch_size=1, shuffle=False)
     print(data_loader.__len__())
-    for S1,S2,f in data_loader:
-        print(S1.shape,S2.shape,f)
+    for S in data_loader:
+        print(len(S))
 
